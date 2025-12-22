@@ -1,16 +1,25 @@
-while True : # Бесконечный цикл, продолжается, пока не будет прерван по логике программы
-    number_list = input('Введите несколько чисел через пробел: ')
+# Выбор направления конвертации
+print("Выберите направление конвертации:")
+print("1. Цельсий → Фаренгейт")
+print("2. Фаренгейт → Цельсий")
+choice = input("Введите 1 или 2: ")
+
+# Обработка выбора
+if choice == '1':
+    temp_input = input("Введите температуру в градусах Цельсия: ")
     try:
-        number_list = number_list.split()
-        number_list = [int(i) for i in number_list]
+        celsius = float(temp_input)
+        fahrenheit = celsius * 9/5 + 32
+        print(f"{celsius}°C равно {fahrenheit}°F")
     except ValueError:
-        print('Ваш ввод должен содержать только числа и пробелы!')
-    else:
-        print(f'Сумма чисел : {sum(number_list)}')
-        print(f'Среднее значение : {sum(number_list) / len(number_list)}')
-        print(f'Максимальное значение : {max(number_list)}')
-        print(f'Минимальное значение : {min(number_list)}')
-        print(f'Количество чётных чисел : {len([i for i in number_list if i % 2 == 0])}') # Внутри скобок создается массив четных чисел из number_list
-        print(f'Количество положительных чисел : {len([i for i in number_list if i > 0])}') # Внутри скобок создается массив положительных чисел из number_list
-        print(f'Сортированный список по возрастанию : {sorted(number_list)}')
-        break
+        print("Ошибка: введено не число.")
+elif choice == '2':
+    temp_input = input("Введите температуру в градусах Фаренгейта: ")
+    try:
+        fahrenheit = float(temp_input)
+        celsius = (fahrenheit - 32) * 5/9
+        print(f"{fahrenheit}°F равно {celsius}°C")
+    except ValueError:
+        print("Ошибка: введено не число.")
+else:
+    print("Ошибка: неверный выбор. Пожалуйста, введите 1 или 2.")
