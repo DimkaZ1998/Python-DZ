@@ -1,195 +1,188 @@
-import random
-import  time
+class Product:
+    """Класс для представления товара в магазине"""
+    next_id = 1 # Количество видов продуктов
 
-# ШАГ 1. Создадим фукнцию-генератор подсказок
-def generate_hint(secret, guess):
-    """
-    Генерирует подсказку в зависимости от модуля разности 
-    между секректным числом и числом, которое ввел пользователь
-    """
-    if abs(secret - guess) <= 5:
-        return 'Горячо!'
-    elif abs(secret - guess) <= 15:
-        return 'Тепло!'
-    else:
-        return 'Холодно'
+    def __init__(self, name, price, quantity):
+        if price <= 0: # Если цена отрицательная - выводим ошибку
+            raise ValueError("Цена должна быть положительной")
+        if quantity < 0: # Если количество товаров меньше нуля - ошибка
+            raise ValueError("Количество не может быть отрицательным")
+        
+        self.id = Product.next_id # Уникальный id товара
+        Product.next_id += 1 # После создания продукта увеличиваем его id
 
-# ШАГ 2. Создадим подсчёт очков, бонус за быструю победу
-def calculate_score(score, isWon, time=0):
-    """
-    1. Снимает очки за каждую попытку
-    2. Проверяет, чтобы максимум было 100 очков
-    3. Начисляет доп. очки за быструю победу
-    """
-    score -= 10 # Снимаем очки за попытку
+        # Если ничего не вызвало ошибку - присваиваем полям значения
+        self.name = name
+        self.price = price
+        self.quantity = quantity
+
+    def reduce_quantity(self, amount): # Уменьшение количества товаров на складе
+        if amount > self.quantity: # Если число товаров для уменьшения больше самого количества товаров - ошибка
+            raise ValueError(f"Недостаточно товара. Доступно: {self.quantity}")
+        if amount <= 0: # Если число для уменьшения количества товаров <= 0 - ошибка
+            raise ValueError("Количество должно быть положительным")
+        
+        # Если ничего не вызвало ошибку - уменьшаем количество товара на складе
+        self.quantity -= amount
+
+    def __str__(self):
+        return f"{self.name} - {self.price} руб. (осталось: {self.quantity})" # Информация о конкретном товаре
+
+class Customer:
+    """Класс для представления покупателя"""
+    def __init__(self, name, email, initial_balance=0): # Укажем баланс по умолчанию - 0
+        if initial_balance < 0: # Если введен отрицательный баланс - ошибка
+            raise ValueError("Баланс не может быть отрицательным")
+        
+        # Если баланс введен корректно - инициализируем покупателя
+        self.name = name
+        self.email = email
+        self._balance = initial_balance
+        self.orders = [] # История покупок
+
+    def add_money(self, amount):
+        """Пополнение баланса"""
+        if amount <= 0: # Невозможно поплнить баланс на отрицательное число
+            raise ValueError("Сумма пополнения должна быть положительной")
+        
+        # Если сумма введена корректно - пополняем баланс
+        self._balance += amount
+        print(f"{self.name}: пополнено {amount} руб. Новый баланс: {self._balance}") # Лог событий
+
+    def charge(self, amount):
+        """Списание баланса"""
+        if amount <= 0: # Невозможно списать отрицательное количество денег
+            raise ValueError("Сумма списания должна быть положительной")
+        if amount > self._balance: # Если сумма списания больше самого баланса - ошибка
+            raise ValueError("На счете недостаточно средств для списания")
+        
+        # Если сумма введена корректно - списываем деньги
+        self._balance -= amount
+        return True # Флаг, показывающий успешность операции
     
-    bonus_score = 20
-    if isWon and time < 41: # Если пользователь победил меньше чем за 40 секунд - начисляем дополнительные очки
-        if score + bonus_score > 100: # Не должно быть больше 100 очков
-            score = 100
-            print(f'Бонус за быструю победу - {bonus_score} очков! Время победы: {time} сек.')
+    def get_balance(self):
+        """Возвращает текущий баланс"""
+        return self._balance
+
+    def add_order(self, order): # Объект класса Order
+        """Добавляет заказ в историю"""
+        self.orders.append(order)
+
+    def __str__(self):
+        return f"{self.name} ({self.email}), баланс: {self._balance} руб." # Информация о пользователе
+    
+class Cart: # Корзина
+    def __init__(self, customer): # Вводим покупателя для данной корзины
+        self.customer = customer
+        self.items = {} # Сама корзина
+
+    def add_product(self, product, quantity=1): # Добавление продукта в корзину
+        if quantity <= 0: # Если введено неположительное количество товара - ошибка
+            raise ValueError("Количество должно быть положительным")
+        if product.quantity < quantity: # Если товара недостаточно на складе - ошибка
+            raise ValueError(f"Недостаточно товара '{product.name}' на складе")
+        
+        if product.id in self.items: # Если продукт уже есть в корзине - не создаем дубликат, а увеличиваем количество
+            self.items[product.id] += quantity
+        else: # Если нет - создаем в списке items новую пару ключ : значение (id-продукта : ео количество)
+            self.items[product.id] = quantity
+
+        print(f"Добавлено в корзину: {product.name} x{quantity}") # Вывод в лог событий
+        
+    def remove_product(self, product, quantity=None): # Удаление товара из корзины (если введено кол-во - удаляем конкретное кол-во товаров)
+        if product.id not in self.items: # Если нету такого товара в корзине - сообщим об этом пользователю
+            print(f"Товар '{product.name}' не найден в корзине")
+            return #   Завершим функцию
+        
+        if quantity is None: # Если пользователь не веел кол-во - полностью удалим товар из корзины
+            del self.items[product.id]
+            print(f"Товар '{product.name}' полностью удален из корзины")
         else:
-            score += bonus_score
-            print(f'Бонус за быструю победу - {bonus_score} очков! Время победы: {time} сек.')
-    
-    
-    return score # Вернем очки
+            if quantity <= 0: # Если введено неположительное кол-во - ошибка
+                raise ValueError("Количество должно быть положительным")
+            
+            if quantity >= self.items[product.id]: # Если пользователь ввел количество товара для  удаления, больше, чем товаров в корзине - также полностью удалим товар
+                del self.items[product.id]
+                print(f"Товар '{product.name}' полностью удален из корзины")
+            
+            else: # Если количестьо для удаления введено правильно - уменьшим его кол-во
+                self.items[product.id] -= quantity
+                print(f"Удалено из корзины: {product.name} x{quantity}")
 
-# ШАГ 3. Основная логика игры
-def play_game(score):
-    """
-    Описывает основную логику игры, цикл while, в котором это все происходит.
-    Аргумет score нужен, чтобы изменить существующие очки а потом вернуть их
-    """
+    def get_total(self, products_dict): # Получим сумму всей корзины, product_dict - склад товаров, представленный списком id продукта: object_Product
+        total = 0 # Сумма
+        for product_id, quantity in self.items.items(): # Пройдемся по списку товаров(id: quantity)
+            if product_id in products_dict: # Если товар есть на складе
+                product = products_dict[product_id] # Получим продукт и информацию о нем
+                total += product.price * quantity # Умножим цену на количество и прибавим к нашей сумме
+        return total
     
-    SECRET = 60 # Секретное число от 1 до 100
-    start_time = time.time() # Время, когда пользователь начал игру
-    attempts = {} # Словарь попыток, где ключ - уникальный id попытки(ее порядковый номер), ключ - содержание попытки(угадал/не угадал)
-    quantity_attempts = 0 # Количество попыток
-    attempts['secret number'] = SECRET # Добавим секретное число в описание игры
-    
-    while True:  
-        if score <= 0:
-            end_time = time.time() # Время, когда у пользователя закончились очки
-            attempt_time = round(abs(start_time - end_time), 3) # Время в секундах, за которое у пользователя закончились очки
-            print('Кажется, ваши очки закончились (\nДо встречи!')
-            
-            # Добавим время поражения
-            attempts['Time of lose'] = attempt_time
-            
-            return (attempts, 0)
-        try: 
-            guess = int(input('Введите число: ')) 
-        except ValueError: # Если пользователь ввёл не число
-            print()
-            print('Ввод должен быть числом!')
-            print()
-            continue
+    def checkout(self, products_dict): # Покупаем корзину, products_dict - склад товаров, представленный списком id продукта: object_Product
+        if not self.items: # Если корзина пустая - сообщим пользователю и завершим функцию
+            print("Корзина пуста!")
+            return None
         
-        if guess <= 0: # Если ввод неположительный
-            print('Число должно быть положительным!')
-            print()
-            continue
+        total = self.get_total(products_dict) # Сумма для списания, перелдаем туда наш склад
+
+        if total > self.customer.get_balance(): # Сообщим польщователю если недостаточно средств
+            print(f"Недостаточно средств. Нужно: {total}, доступно: {self.customer.get_balance()}")
+            return None
         
-        quantity_attempts += 1 # Увеличим кол-во попыток
+        for product_id, quantity in self.items.items(): # Если все в порядке - пройдемся по списку товаров(id: quantity)
+            if product_id in products_dict: # Если товар есть на складе 
+                product = products_dict[product_id] # Получим товар и информацию о нём
+                if product.quantity < quantity: # Если количество товара на складе меньше, чем ввел пользователь - сообщим об этом
+                    print(f"Недостаточно товара '{product.name}' на складе")
+                    return None
+                
+        order = Order(self.customer, self.items.copy(), total) # Создадим запись о заказе, его 'чек', где есть сумма, наша корзина и покупателдь
+
+        self.customer.charge(total) # Спишем деньги 
+
+        # Уменьшим количество товаров на скалдке после покупки
+        for product_id, quantity in self.items.items():
+            if product_id in products_dict: # Если продукт есть на скалде
+                product = products_dict[product_id] # Получим продукт
+                product.reduce_quantity(quantity) # Уменьшим его количество на количсевто купленных товаров ланного вида
+
+        self.customer.add_order(order) # Добавим заказ в историю покупок
+
+        self.items.clear() # Очистим корзину после успешной покупки
+
+        print(f"Заказ оформлен! Номер заказа: {order.id}") # Сообщим польщователю об успешности операции
+        return order # Вернем наш заказ
+    
+    def show(self, products_dict): # Покажем содержимое корзины
+        if not self.items:
+            print("Корзина пуста")
+            return
         
-        if guess == SECRET:
-            end_time = time.time() # Время, когда пользователь отгадал число
-            attempt_time = round(abs(start_time - end_time), 3) # Время в секундах, за которое пользователь угадал число
-            
-            score = calculate_score(score, True, attempt_time)
-            print()
-            
-            # Добавим попытку в список
-            attempts[f'Попытка {quantity_attempts}'] = {
-                'id' : quantity_attempts,
-                'result' : True,
-                'input number' : guess,
-            }
-            
-            # Добавим время победы
-            attempts['Time of victory'] = attempt_time
-            
-            break
-        else:
-            hint = generate_hint(SECRET, guess)
-            print(hint)
-            score = calculate_score(score, False)
-            print()
-            # Добавим попытку в список
-            attempts[f'Попытка {quantity_attempts}'] = {
-                'id' : quantity_attempts,
-                'result' : False,
-                'input number' : guess
-            }
-    
-    return (attempts, score) # Возвращаем список попыток (Результат игры), Очки просле игры
+        print("\nСодержимое корзины:")
+        print('-' * 40)
 
-# ШАГ 4. Покажем статистику игр
-def show_statistics(plays_dict):
-    print()
-    if not plays_dict: # Если игр еще не было
-        print('Вы еще ни разу не сыграли(')
-        print()
-        return
-    for play_id, attempts_dict in plays_dict.items():
-        if play_id == 'Quantity of games': # Выведем количество игр
-            print(f'{play_id} : {attempts_dict}')
-            continue
-        if play_id == 'Best result': # Выведем лучший результат, если он есть
-            print(f'{play_id} : {attempts_dict}')
-            continue
-        print(play_id, ':')
-        for attempt_id, attempt_info in attempts_dict.items():
-            if attempt_id == 'Time of victory' or attempt_id == 'Time of lose': # Последний элемент списка попыток
-                print(f'    {attempt_id} : {attempt_info}')
-                print()
-                continue
-            elif attempt_id == 'secret number': # Секретное число:
-                print(f'    {attempt_id} : {attempt_info}')
-                print()
-                continue
-            print(f'    {attempt_id}: ')
-            print()
-            for key, info in attempt_info.items():
-                print(f'\t{key}: {info}')
-            
-            print()
-        print()
+        for product_id, quantity in self.items.items():
+            if product_id in products_dict: # Если продукт есть на складе
+                product = products_dict[product_id] # Получим продукт
+                print(f"{product.name} x{quantity} = {product.price * quantity} руб.") # Информация о данном продукте и уена за корличество товара
 
-# Меню пользователя
-menu = f"""
-{'=' * 40}
-Меню :
-1. Начать новую игру
-2. Показать статистику игр
-3. Завершить сеанс
-{'=' * 40}
-"""
-score = 100
+        print('-' * 40)
+        print(f"Итого: {self.get_total(products_dict)} руб.") # Сумма покупки
 
-plays_dict = {} # Список игр, где ключ - уникальный id игры, значение - словарь с попытками, полученный из game_play()
-best_result = False # Лучший результат по времени, при первой инициализации его нету
-plays_dict['Quantity of games'] = 0 # Количество игр
-plays_quantity = 0
+class Order: # Заказ
+    next_id = 1 # Количество заказов
 
-# TODO:
-# 1. Добавить в статистику игр самый быстрый результат
-print()
-print()
-while True:
-    print(menu)
-    
-    try:
-        change = int(input('Ваш выбор (1-4): '))
-    except ValueError: # Если пользователь ввёл не число
-        print('Ввод должен быть числом!')
-        continue
-    
-    if change <= 0: # Если число неположительное
-        print('Ввод должен быть положительным!')
-        continue
-    elif change not in range(1, 5): # Если вариант выбран неверно
-        print('Вводите правильный вариант!')
-        continue
-    
-    if change == 1:
-        game, score = play_game(score) # Распакуем кортеж, который вернул play_game и получим информацию об игре и обновленные очки
-        if game.get('Time of victory'): # Если игрок выиграл
-            if game['Time of victory'] < best_result or not best_result: # Сравним время его победы с имеющимся лучшим результатом. Если лучшего результата еще нет - присвоим время первой победы
-                best_result = game['Time of victory']
-                plays_dict['Best result'] = best_result
-        plays_quantity += 1
-        plays_dict['Quantity of games'] = plays_quantity # Увеличим количество игр
-        
-        plays_dict[f'Игра {plays_quantity}'] = game 
-    elif change == 2:
-        show_statistics(plays_dict)
-    elif change == 3:
-        print()
-        print('=' * 40)
-        print('Сеанс завершен')
-        print('=' * 40)
-        print('СТАТИСТИКА ИГР')
-        show_statistics(plays_dict)
-        break
+    def __init__(self, customer, items, total):
+        from datetime import datetime # Время заказа
+        self.id = Order.next_id # Получим уникальный id
+        Order.next_id += 1 # Увеличим корличество
+
+        self.customer = customer
+        self.items = items
+        self.total = total
+        self.date = datetime.now()
+        self.status = 'обработан'
+
+    def __str__(self): # Информация о заказе
+        items_str = ", ".join([f"товар {pid}: x{qty}" for pid, qty in self.items.items()])
+        date_str = self.date.strftime("%Y-%m-%d %H:%M")
+        return f"Заказ #{self.id} от {date_str}: {items_str}, сумма: {self.total} руб."
