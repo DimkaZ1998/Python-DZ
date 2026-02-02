@@ -1,110 +1,97 @@
-class Movie:
-    def __init__(self, title, director, year, genre):
-        self.title = title
-        self.director = director
-        self.year = year
-        self.genre = genre
-        self.rating = None
+# Анализатор данных
 
-    def set_rating(self, rating):
-        if 1 <= rating <= 10:
-            self.rating = rating
-        else:
-            raise ValueError("Рейтинг должен быть от 1 до 10")
+def filter_even(numbers):
+    """
+    Возвращает только четные числа
+    
+    Аргументы:
+        numbers - список чисел(список)
+    
+    Возвращает:
+        list()
+    """
+    
+    result = [num for num in numbers if num % 2 == 0]
+    return result
 
-    def is_high_rated(self):
-        return self.rating is not None and self.rating >= 8
+def filter_odd(numbers):
+    """
+    Возвращает только нечетные числа
+    
+    Аргументы:
+        numbers - список чисел(список)
+    
+    Возвращает:
+        list()
+    """
+    
+    result = [num for num in numbers if num % 2 != 0]
+    return result
 
-    def __str__(self):
-        rating_str = f"{self.rating}" if self.rating is not None else "Нет оценки"
-        return f"{self.title} ({self.year}) - {self.director} [{self.genre}] ★{rating_str}"
+def is_even(num): # True - если число простое, False - если составное
+    i = 2
+    if num == 1:
+        return False
+    while i < num:
+        if num % i == 0:
+            return False
+        i += 1
+    return True
 
+def filter_prime(numbers):
+    """
+    Возвращает только простые числа. 
+    
+    Аргументы:
+        numbers - список чисел(список)
+    
+    Возвращаент:
+        list()
+    """
+    
+    result = []
+    for num in numbers:
+        if is_even(num):
+            result.append(num)
+    return result
 
-class MovieCollection:
-    def __init__(self, name):
-        self.name = name
-        self.movies = []
+def filter_by_range(numbers, start, end):
+    result = []
+    
+    for num in numbers:
+        if start <= num <= end:
+            result.append(num)
+    
+    return result
 
-    def add_movie(self, movie):
-        # Проверка на уникальность по названию
-        if self.get_movie_by_title(movie.title) is None:
-            self.movies.append(movie)
-        else:
-            print(f"Фильм с названием '{movie.title}' уже есть в коллекции.")
+def filter_by_condition(numbers, condition_func):
+    result = []
+    
+    for num in numbers:
+        if condition_func(num):
+            result.append(num)
+    
+    return result
 
-    def remove_movie(self, title):
-        movie = self.get_movie_by_title(title)
-        if movie:
-            self.movies.remove(movie)
-        else:
-            print(f"Фильм с названием '{title}' не найден.")
+def calculate_statistics(numbers):
+    sum_numbers = sum(numbers)
+    avg = sum_numbers / len(numbers)
+    unique_count = 0
+    
+    for num in numbers:
+        if numbers.count(num) == 1:
+            unique_count = num
+    
+    print('max: ', max(numbers))
+    print('min: ', min(numbers))
+    print('average: ', avg)
+    print('sum: ', sum_numbers)
+    print('unique count: ', unique_count)
 
-    def get_movie_by_title(self, title):
-        for movie in self.movies:
-            if movie.title == title:
-                return movie
-        return None
+    
+numbers = [12, 7, 23, 4, 19, 8, 11, 15]
 
-    def rate_movie(self, title, rating):
-        movie = self.get_movie_by_title(title)
-        if movie:
-            try:
-                movie.set_rating(rating)
-            except ValueError as e:
-                print(e)
-        else:
-            print(f"Фильм с названием '{title}' не найден.")
-
-    def get_top_movies(self, limit=5):
-        rated_movies = [m for m in self.movies if m.rating is not None]
-        sorted_movies = sorted(rated_movies, key=lambda m: m.rating, reverse=True)
-        return sorted_movies[:limit]
-
-    def get_movies_by_genre(self, genre):
-        return [m for m in self.movies if m.genre == genre]
-
-    def get_stats(self):
-        total_movies = len(self.movies)
-        rated_movies = [m for m in self.movies if m.rating is not None]
-        rated_count = len(rated_movies)
-        average_rating = (sum(m.rating for m in rated_movies) / rated_count) if rated_count > 0 else 0
-        genres = [m.genre for m in self.movies]
-        most_common_genre = max(set(genres), key=genres.count) if genres else None
-        high_rated_count = len([m for m in self.movies if m.rating is not None and m.rating >= 8])
-        return {
-            'total_movies': total_movies,
-            'rated_movies': rated_count,
-            'average_rating': round(average_rating, 2),
-            'most_common_genre': most_common_genre,
-            'high_rated_count': high_rated_count
-        }
-
-    def __str__(self):
-        return f"Коллекция '{self.name}': {len(self.movies)} фильмов"
-
-
-# Пример использования:
-# Создаем коллекцию
-my_collection = MovieCollection("Мои любимые фильмы")
-
-# Создаем фильмы
-film1 = Movie("Начало", "Кристофер Нолан", 2010, "фантастика")
-film2 = Movie("Крестный отец", "Фрэнсис Форд Коппола", 1972, "драма")
-
-# Добавляем в коллекцию
-my_collection.add_movie(film1)
-my_collection.add_movie(film2)
-
-# Оцениваем фильмы
-my_collection.rate_movie("Начало", 9)
-my_collection.rate_movie("Крестный отец", 10)
-
-# Получаем статистику
-stats = my_collection.get_stats()
-print(f"Всего фильмов: {stats['total_movies']}")
-print(f"Средний рейтинг: {stats['average_rating']}")
-
-# Ищем фильмы по жанру
-fantasy_movies = my_collection.get_movies_by_genre("фантастика")
-for m in fantasy_movies:
-    print(Movie)
+print("Четные:", filter_even(numbers))
+print("Простые:", filter_prime(numbers))
+print("В диапазоне 10-20:", filter_by_range(numbers, 10, 20))
+print('Больше 16: ', filter_by_condition(numbers, lambda x: x > 16))
