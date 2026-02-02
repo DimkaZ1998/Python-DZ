@@ -1,97 +1,89 @@
-# Анализатор данных
+import random
+from datetime import datetime, timedelta
 
-def filter_even(numbers):
-    """
-    Возвращает только четные числа
-    
-    Аргументы:
-        numbers - список чисел(список)
-    
-    Возвращает:
-        list()
-    """
-    
-    result = [num for num in numbers if num % 2 == 0]
-    return result
+def total_revenue(sales):
+    return sum(item['price'] * item['quantity'] for item in sales)
 
-def filter_odd(numbers):
-    """
-    Возвращает только нечетные числа
-    
-    Аргументы:
-        numbers - список чисел(список)
-    
-    Возвращает:
-        list()
-    """
-    
-    result = [num for num in numbers if num % 2 != 0]
-    return result
+def best_selling_product(sales):
+    product_sales = {}
+    for item in sales:
+        product_sales[item['product']] = product_sales.get(item['product'], 0) + item['quantity']
+    if not product_sales:
+        return None
+    return max(product_sales, key=product_sales.get)
 
-def is_even(num): # True - если число простое, False - если составное
-    i = 2
-    if num == 1:
-        return False
-    while i < num:
-        if num % i == 0:
-            return False
-        i += 1
-    return True
+def best_seller(sales):
+    seller_revenue = {}
+    for item in sales:
+        revenue = item['price'] * item['quantity']
+        seller_revenue[item['seller']] = seller_revenue.get(item['seller'], 0) + revenue
+    if not seller_revenue:
+        return None
+    return max(seller_revenue, key=seller_revenue.get)
 
-def filter_prime(numbers):
-    """
-    Возвращает только простые числа. 
-    
-    Аргументы:
-        numbers - список чисел(список)
-    
-    Возвращаент:
-        list()
-    """
-    
-    result = []
-    for num in numbers:
-        if is_even(num):
-            result.append(num)
-    return result
+def sales_by_category(sales):
+    category_revenue = {}
+    for item in sales:
+        revenue = item['price'] * item['quantity']
+        category_revenue[item['category']] = category_revenue.get(item['category'], 0) + revenue
+    return category_revenue
 
-def filter_by_range(numbers, start, end):
-    result = []
-    
-    for num in numbers:
-        if start <= num <= end:
-            result.append(num)
-    
-    return result
+def daily_sales(sales):
+    daily_revenue = {}
+    for item in sales:
+        date = item['date']
+        revenue = item['price'] * item['quantity']
+        daily_revenue[date] = daily_revenue.get(date, 0) + revenue
+    return daily_revenue
 
-def filter_by_condition(numbers, condition_func):
-    result = []
-    
-    for num in numbers:
-        if condition_func(num):
-            result.append(num)
-    
-    return result
+def add_sale(sales, new_sale):
+    required_fields = {'date', 'product', 'category', 'price', 'quantity', 'seller'}
+    if not required_fields.issubset(new_sale):
+        raise ValueError("Неполные данные для продажи")
+    # Можно добавить дополнительные проверки типов, формата даты, цен и т.д.
+    sales.append(new_sale)
 
-def calculate_statistics(numbers):
-    sum_numbers = sum(numbers)
-    avg = sum_numbers / len(numbers)
-    unique_count = 0
-    
-    for num in numbers:
-        if numbers.count(num) == 1:
-            unique_count = num
-    
-    print('max: ', max(numbers))
-    print('min: ', min(numbers))
-    print('average: ', avg)
-    print('sum: ', sum_numbers)
-    print('unique count: ', unique_count)
+def generate_sample_data(num_records):
+    products = ['Ноутбук', 'Мышь', 'Клавиатура', 'Телевизор', 'Смартфон']
+    categories = ['Электроника', 'Бытовая техника', 'Офисные товары']
+    sellers = ['Иванов', 'Петров', 'Сидоров', 'Кузнецов']
+    start_date = datetime(2024, 1, 1)
+    sales = []
 
-    
-numbers = [12, 7, 23, 4, 19, 8, 11, 15]
+    for _ in range(num_records):
+        days_offset = random.randint(0, 30)
+        date = (start_date + timedelta(days=days_offset)).strftime('%Y-%m-%d')
+        product = random.choice(products)
+        category = random.choice(categories)
+        price = random.randint(500, 100000)
+        quantity = random.randint(1, 10)
+        seller = random.choice(sellers)
+        sales.append({
+            'date': date,
+            'product': product,
+            'category': category,
+            'price': price,
+            'quantity': quantity,
+            'seller': seller
+        })
+    return sales
 
-print("Четные:", filter_even(numbers))
-print("Простые:", filter_prime(numbers))
-print("В диапазоне 10-20:", filter_by_range(numbers, 10, 20))
-print('Больше 16: ', filter_by_condition(numbers, lambda x: x > 16))
+def generate_report(sales, start_date, end_date):
+    report_sales = [s for s in sales if start_date <= s['date'] <= end_date]
+    total = total_revenue(report_sales)
+    products = best_selling_product(report_sales)
+    seller = best_seller(report_sales)
+    return {
+        'total_revenue': total,
+        'best_product': products,
+        'best_seller': seller
+    }
+
+# Пример использования
+sales = generate_sample_data(50)
+
+print(f"Общая выручка: {total_revenue(sales)} руб.")
+print(f"Лучший товар: {best_selling_product(sales)}")
+print(f"Лучший продавец: {best_seller(sales)}")
+print("Выручка по категориям:", sales_by_category(sales))
+print("Продажи по дням:", daily_sales(sales))
