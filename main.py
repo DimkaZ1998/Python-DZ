@@ -1,89 +1,103 @@
-import random
-from datetime import datetime, timedelta
+# Структура данных для хранения игроков
+players = {
+    1: {"name": "Алексей", "rating": 1000, "matches": 0},
+    2: {"name": "Мария", "rating": 1000, "matches": 0},
+    3: {"name": "Дмитрий", "rating": 1000, "matches": 0}
+}
 
-def total_revenue(sales):
-    return sum(item['price'] * item['quantity'] for item in sales)
+# Коэффициент скорости изменения рейтинга
+K = 32
 
-def best_selling_product(sales):
-    product_sales = {}
-    for item in sales:
-        product_sales[item['product']] = product_sales.get(item['product'], 0) + item['quantity']
-    if not product_sales:
-        return None
-    return max(product_sales, key=product_sales.get)
+# Задача 1: Функция для расчета изменения рейтинга для игрока A
+def get_rating_delta(rating_a, rating_b, result):
+    """
+    Расчет изменения рейтинга по формуле ELO.
+    
+    :param rating_a: текущий рейтинг игрока A
+    :param rating_b: текущий рейтинг игрока B
+    :param result: результат матча для игрока A
+    1 — победа, 0.5 — ничья, 0 — поражение
+    :return: целое число — изменение рейтинга для игрока A
+    """
+    # Шаг 1: Вычисляем вероятность победы игрока A
+    E = 1 / (1 + 10 ** ((rating_b - rating_a) / 400))
+    # Шаг 2: Вычисляем изменение рейтинга
+    change = K * (result - E)
+    # Шаг 3: Округляем до целого
+    return round(change)
 
-def best_seller(sales):
-    seller_revenue = {}
-    for item in sales:
-        revenue = item['price'] * item['quantity']
-        seller_revenue[item['seller']] = seller_revenue.get(item['seller'], 0) + revenue
-    if not seller_revenue:
-        return None
-    return max(seller_revenue, key=seller_revenue.get)
+# Задача 2: Функция регистрации матча между двумя игроками
+def register_match(p1_id, p2_id, winner):
+    """
+    Обновление рейтингов игроков после матча.
+    
+    :param p1_id: ID первого игрока
+    :param p2_id: ID второго игрока
+    :param winner: кто победил:
+    1 — победил первый игрок,
+    2 — победил второй,
+    0 — ничья
+    """
+    # Проверка существования игроков
+    if p1_id not in players or p2_id not in players:
+        print("Один из игроков не найден.")
+        return
+    
+    # Получение данных игроков
+    player1 = players[p1_id]
+    player2 = players[p2_id]
+    
+    rating1 = player1['rating']
+    rating2 = player2['rating']
+    
+    # Определяем результат для каждого игрока
+    if winner == 1:
+        result1, result2 = 1, 0
+    elif winner == 2:
+        result1, result2 = 0, 1
+    elif winner == 0:
+        result1, result2 = 0.5, 0.5
+    else:
+        print("Некорректный результат.")
+        return
+    
+    # Расчет изменения рейтинга для каждого игрока
+    delta1 = get_rating_delta(rating1, rating2, result1)
+    delta2 = get_rating_delta(rating2, rating1, result2)
+    
+    # Обновляем рейтинги
+    players[p1_id]['rating'] += delta1
+    players[p2_id]['rating'] += delta2
+    
+    # Увеличиваем счетчик матчей
+    players[p1_id]['matches'] += 1
+    players[p2_id]['matches'] += 1
+    
+    # Выводим результат
+    print(f"Рейтинг игрока {player1['name']} изменился на {delta1:+}")
+    print(f"Рейтинг игрока {player2['name']} изменился на {delta2:+}")
 
-def sales_by_category(sales):
-    category_revenue = {}
-    for item in sales:
-        revenue = item['price'] * item['quantity']
-        category_revenue[item['category']] = category_revenue.get(item['category'], 0) + revenue
-    return category_revenue
+# Задача 3: Вывод таблицы лидеров
+def show_leaderboard():
+    """
+    Выводит список игроков, отсортированный по рейтингу по убыванию.
+    Формат: 1. Имя - рейтинг очков (кол-во матчей)
+    """
+    # Сортируем игроков по рейтингу
+    sorted_players = sorted(players.items(), key=lambda item: item[1]['rating'], reverse=True)
+    
+    print("Таблица лидеров:")
+    # Перебираем отсортированный список и выводим каждого игрока
+    for rank, (player_id, data) in enumerate(sorted_players, start=1):
+        print(f"{rank}. {data['name']} - {data['rating']} очков ({data['matches']} матчей)")
 
-def daily_sales(sales):
-    daily_revenue = {}
-    for item in sales:
-        date = item['date']
-        revenue = item['price'] * item['quantity']
-        daily_revenue[date] = daily_revenue.get(date, 0) + revenue
-    return daily_revenue
-
-def add_sale(sales, new_sale):
-    required_fields = {'date', 'product', 'category', 'price', 'quantity', 'seller'}
-    if not required_fields.issubset(new_sale):
-        raise ValueError("Неполные данные для продажи")
-    # Можно добавить дополнительные проверки типов, формата даты, цен и т.д.
-    sales.append(new_sale)
-
-def generate_sample_data(num_records):
-    products = ['Ноутбук', 'Мышь', 'Клавиатура', 'Телевизор', 'Смартфон']
-    categories = ['Электроника', 'Бытовая техника', 'Офисные товары']
-    sellers = ['Иванов', 'Петров', 'Сидоров', 'Кузнецов']
-    start_date = datetime(2024, 1, 1)
-    sales = []
-
-    for _ in range(num_records):
-        days_offset = random.randint(0, 30)
-        date = (start_date + timedelta(days=days_offset)).strftime('%Y-%m-%d')
-        product = random.choice(products)
-        category = random.choice(categories)
-        price = random.randint(500, 100000)
-        quantity = random.randint(1, 10)
-        seller = random.choice(sellers)
-        sales.append({
-            'date': date,
-            'product': product,
-            'category': category,
-            'price': price,
-            'quantity': quantity,
-            'seller': seller
-        })
-    return sales
-
-def generate_report(sales, start_date, end_date):
-    report_sales = [s for s in sales if start_date <= s['date'] <= end_date]
-    total = total_revenue(report_sales)
-    products = best_selling_product(report_sales)
-    seller = best_seller(report_sales)
-    return {
-        'total_revenue': total,
-        'best_product': products,
-        'best_seller': seller
-    }
-
-# Пример использования
-sales = generate_sample_data(50)
-
-print(f"Общая выручка: {total_revenue(sales)} руб.")
-print(f"Лучший товар: {best_selling_product(sales)}")
-print(f"Лучший продавец: {best_seller(sales)}")
-print("Выручка по категориям:", sales_by_category(sales))
-print("Продажи по дням:", daily_sales(sales))
+# Пример использования:
+if __name__ == "__main__":
+    # Регистрация нескольких матчей
+    register_match(1, 2, 1)  # Алексей побеждает Марию
+    register_match(3, 1, 2)  # Дмитрий побеждает Алексея
+    register_match(2, 3, 0)  # Мария и Дмитрий сыграли ничью
+    
+    print()
+    # Вывод таблицы лидеров
+    show_leaderboard()
